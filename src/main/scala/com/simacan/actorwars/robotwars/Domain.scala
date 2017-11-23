@@ -7,20 +7,21 @@ import akka.actor.ActorRef
 import scala.concurrent.duration.FiniteDuration
 
 object Domain {
+  type Vector2D = (Float, Float)
 
   sealed trait GameObject
 
   case class Robot(
                     color: Color = Color.RED,
-                    x: Double = 0, y: Double = 0, dx: Double = 0, dy: Double = 0,
-                    enginePower: Double = 0,
-                    heading: Double = 0,
+                    pos: Vector2D = (0, 0), velocity: Vector2D = (0, 0),
+                    enginePower: Float = 0,
+                    heading: Float = 0,
                     hitpoints: Int = 10,
-                    steerPos: Double = 0,
-                    coolDown: Double = 0,
+                    steerPos: Float = 0,
+                    coolDown: Float = 0,
                     firing: Boolean = false) extends GameObject
 
-  case class Bullet(x: Double = 0, y: Double = 0, dx: Double = 0, dy: Double = 0, color: Color) extends GameObject
+  case class Bullet(pos: Vector2D, velocity: Vector2D, color: Color) extends GameObject
 
   sealed trait GameStateListener {
     def actorRef: ActorRef
@@ -35,7 +36,7 @@ object Domain {
 
   case class WaitingStart(players: Seq[Player] = Seq(), spectators: Seq[Spectator] = Seq()) extends GameState
 
-  case class Fighting(players: Seq[Player], spectators: Seq[Spectator], time: Double) extends GameState
+  case class Fighting(players: Seq[Player], spectators: Seq[Spectator], time: Float) extends GameState
 
   case class GameOver(winners: Seq[Player], spectators: Seq[Spectator]) extends GameState
 
@@ -46,20 +47,20 @@ object Domain {
 
   case class RegisterSpectator(listener: ActorRef) extends ClientMessage
 
-  case class RobotCommand(enginePower: Double, steerPosition: Double, fire: Boolean) extends ClientMessage
+  case class RobotCommand(enginePower: Float, steerPosition: Float, fire: Boolean) extends ClientMessage
 
   case class RobotSettings(
-                            width: Double,
-                            height: Double,
+                            width: Float,
+                            height: Float,
                             initialHitpoints: Int,
-                            coolDownMillis: Double,
-                            maximumSteerPos: Double,
-                            maximumEnginePower: Double,
-                            bulletSpeed: Double)
+                            coolDownMillis: Float,
+                            maximumSteerPos: Float,
+                            maximumEnginePower: Float,
+                            bulletSpeed: Float)
 
   case class LevelSettings(
-                            width: Double,
-                            height: Double,
+                            width: Float,
+                            height: Float,
                             robotSettings: RobotSettings,
                             maximumRobots: Int)
 

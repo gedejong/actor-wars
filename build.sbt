@@ -36,6 +36,9 @@ lazy val core = (project in file("."))
       "org.typelevel"  %% "squants"  % "1.3.0",
 
       // Scalatest
-      "org.scalatest" %% "scalatest" % "3.0.4" % "test"
+      "org.scalatest" %% "scalatest" % "3.0.4" % "test",
+
+      // Physics engine
+      "org.jbox2d" % "jbox2d-library" % "2.2.1.1"
     )
   )

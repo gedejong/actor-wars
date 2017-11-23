@@ -4,9 +4,6 @@ import java.awt.Color
 
 import akka.actor.{Actor, ActorRef}
 import com.simacan.actorwars.robotwars.Domain._
-import com.simacan.actorwars.robotwars.InternalGameActorMessages.SendGameTick
-
-import scala.concurrent.duration.FiniteDuration
 
 object InternalGameActorMessages {
   sealed trait InternalGameActorMessages
@@ -17,8 +14,6 @@ object InternalGameActorMessages {
 class GameActor(gameSettings: GameSettings) extends Actor {
 
   override def receive = inState(WaitingStart())
-
-  import scala.concurrent.duration._
 
   override def preStart(): Unit = {
     super.preStart()
@@ -60,11 +55,11 @@ class GameActor(gameSettings: GameSettings) extends Actor {
     val middleX = gameSettings.levelSettings.width / 2
     val middleY = gameSettings.levelSettings.height / 2
     val ringDiameter = Math.min(gameSettings.levelSettings.width, gameSettings.levelSettings.height) / 4
-    val ringPos = (playerNumber.toDouble / totalPlayers.toDouble) * Math.PI
-    val posX = middleX + ringDiameter * Math.sin(ringPos)
-    val posY = middleY + ringDiameter * Math.cos(ringPos)
+    val ringPos = ((playerNumber.toDouble / totalPlayers.toDouble) * Math.PI).toFloat
+    val posX = (middleX + ringDiameter * Math.sin(ringPos)).toFloat
+    val posY = (middleY + ringDiameter * Math.cos(ringPos)).toFloat
     val color = Color.getHSBColor(playerNumber.toFloat / totalPlayers.toFloat, .85f, .6f)
-    robot.copy(color = color, x = posX, y = posY, heading = ringPos)
+    robot.copy(color = color, pos = (posX, posY), heading = ringPos)
   }
 }
 
