@@ -1,4 +1,4 @@
-package nl.edejong.robotwars
+package com.simacan.actorwars.robotwars
 
 import akka.actor.Actor
 

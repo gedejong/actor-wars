@@ -1,4 +1,4 @@
-name := "robot-wars"
+name := "actor-wars"
 
 version := "0.1"
 
