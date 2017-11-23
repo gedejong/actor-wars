@@ -34,9 +34,15 @@ object Domain {
 
   sealed trait GameState
 
-  case class WaitingStart(players: Seq[Player] = Seq(), spectators: Seq[Spectator] = Seq()) extends GameState
+  case class WaitingStart(
+                           players: Seq[Player] = Seq(),
+                           spectators: Seq[Spectator] = Seq()) extends GameState
 
-  case class Fighting(players: Seq[Player], spectators: Seq[Spectator], time: Float) extends GameState
+  case class Fighting(
+                       players: Seq[Player] = Seq(),
+                       spectators: Seq[Spectator] = Seq(),
+                       bullets: Seq[Bullet] = Seq(),
+                       time: Float = 0f) extends GameState
 
   case class GameOver(winners: Seq[Player], spectators: Seq[Spectator]) extends GameState
 

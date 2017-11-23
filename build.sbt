@@ -40,5 +40,6 @@ lazy val core = (project in file("."))
 
       // Physics engine
       "org.jbox2d" % "jbox2d-library" % "2.2.1.1"
+
     )
   )

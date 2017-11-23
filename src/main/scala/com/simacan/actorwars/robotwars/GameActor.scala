@@ -13,15 +13,24 @@ object InternalGameActorMessages {
   sealed trait InternalGameActorMessages
 
   object GameTick extends InternalGameActorMessages
-
 }
 
-class GameActor(gameSettings: GameSettings) extends Actor {
+trait GameSettingsProvider {
+  def gameSettings: GameSettings
+}
+
+trait GameEngine {
+  def initialize(waitingStart: WaitingStart): Fighting
+  def calculateNextState(fighting: Fighting): Fighting
+}
+
+trait GameActor extends Actor with GameEngine with GameSettingsProvider {
   override def receive = inState(WaitingStart())
 
   override def preStart(): Unit = {
     super.preStart()
     // TODO: later have another actor initialize the scheduler
+    import scala.concurrent.duration._
     implicit val executionContext: ExecutionContextExecutor = context.system.dispatcher
     context.system.scheduler.schedule(0.millis, gameSettings.updateInterval, self, GameTick)
   }
@@ -37,7 +46,7 @@ class GameActor(gameSettings: GameSettings) extends Actor {
           if (newPlayers.length < gameSettings.levelSettings.maximumRobots)
             state.copy(players = newPlayers)
           else
-            Fighting(players = newPlayers, spectators = spectators, time = 0d)
+            Fighting(players = newPlayers, spectators = spectators, time = 0f)
         )
 
       case RegisterSpectator(listener) ⇒
@@ -46,13 +55,16 @@ class GameActor(gameSettings: GameSettings) extends Actor {
       case GameTick ⇒ (players ++ spectators).foreach(_.actorRef ! state)
     }
 
-    case state@Fighting(players, spectators, time) ⇒ {
+    case state@Fighting(players, spectators, _, _) ⇒ {
       case RobotCommand(enginePower, steerPosition, fire) ⇒
         state.copy(players = players.map {
           case p@Player(robot, actorRef, _) if actorRef == sender() ⇒
             p.copy(robot.copy(enginePower = enginePower, steerPos = steerPosition, firing = fire))
           case p ⇒ p
         })
+
+      case GameTick ⇒
+        spectators.foreach(_.actorRef ! state)
     }
     case state@GameOver(winners, spectators) ⇒ {
       case GameTick ⇒ spectators.foreach(_.actorRef ! state)
