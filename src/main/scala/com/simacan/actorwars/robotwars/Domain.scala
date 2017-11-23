@@ -4,12 +4,14 @@ import java.awt.Color
 
 import akka.actor.ActorRef
 
+import scala.concurrent.duration.FiniteDuration
+
 object Domain {
 
   sealed trait GameObject
 
   case class Robot(
-                    color: Color,
+                    color: Color = Color.RED,
                     x: Double = 0, y: Double = 0, dx: Double = 0, dy: Double = 0,
                     enginePower: Double = 0,
                     heading: Double = 0,
@@ -31,16 +33,18 @@ object Domain {
 
   sealed trait GameState
 
-  case class WaitingStart(players: Seq[Player], posRemain: Int = 8) extends GameState
+  case class WaitingStart(players: Seq[Player] = Seq(), spectators: Seq[Spectator] = Seq()) extends GameState
 
-  case class Fighting(players: Seq[Player], time: Double) extends GameState
+  case class Fighting(players: Seq[Player], spectators: Seq[Spectator], time: Double) extends GameState
 
-  case class GameOver(winners: Seq[Player]) extends GameState
+  case class GameOver(winners: Seq[Player], spectators: Seq[Spectator]) extends GameState
 
 
   sealed trait ClientMessage
 
-  case class Register(listener: ActorRef, name: String) extends ClientMessage
+  case class RegisterRobot(listener: ActorRef, name: String) extends ClientMessage
+
+  case class RegisterSpectator(listener: ActorRef) extends ClientMessage
 
   case class RobotCommand(enginePower: Double, steerPosition: Double, fire: Boolean) extends ClientMessage
 
@@ -63,7 +67,9 @@ object Domain {
 
   case class GameTick(gameState: GameState) extends ServerMessage
 
-  case class GameSettings(levelSettings: LevelSettings) extends ServerMessage
+  case class GameSettings(
+                           levelSettings: LevelSettings,
+                           updateInterval: FiniteDuration) extends ServerMessage
 
 }
 
