@@ -4,44 +4,59 @@ import java.awt.Color
 
 import akka.actor.{Actor, ActorRef}
 import com.simacan.actorwars.robotwars.Domain._
+import com.simacan.actorwars.robotwars.InternalGameActorMessages.GameTick
+
+import scala.concurrent.ExecutionContextExecutor
 
 object InternalGameActorMessages {
+
   sealed trait InternalGameActorMessages
-  object SendGameTick extends InternalGameActorMessages
+
+  object GameTick extends InternalGameActorMessages
+
 }
 
-
 class GameActor(gameSettings: GameSettings) extends Actor {
-
   override def receive = inState(WaitingStart())
 
   override def preStart(): Unit = {
     super.preStart()
-    //context.system.scheduler.schedule(0.millis, gameSettings.updateInterval, SendGameTick)
+    // TODO: later have another actor initialize the scheduler
+    implicit val executionContext: ExecutionContextExecutor = context.system.dispatcher
+    context.system.scheduler.schedule(0.millis, gameSettings.updateInterval, self, GameTick)
   }
 
   def inState: GameState ⇒ Receive = {
 
-    case WaitingStart(players, spectators) ⇒ {
+    case state@WaitingStart(players, spectators) ⇒ {
 
       case RegisterRobot(listener, name) ⇒
         val newPlayers = players :+ createPlayer(listener, name)
 
-        if (newPlayers.length < gameSettings.levelSettings.maximumRobots)
-          context become inState(WaitingStart( players = newPlayers, spectators = spectators))
-        else
-          context become inState(Fighting(players = newPlayers, spectators = spectators, time = 0d))
+        context become inState(
+          if (newPlayers.length < gameSettings.levelSettings.maximumRobots)
+            state.copy(players = newPlayers)
+          else
+            Fighting(players = newPlayers, spectators = spectators, time = 0d)
+        )
 
       case RegisterSpectator(listener) ⇒
-        context become inState(WaitingStart(
-          players = players,
-          spectators = spectators :+ Spectator(listener)))
+        context become inState(state.copy(spectators = spectators :+ Spectator(listener)))
 
-
+      case GameTick ⇒ (players ++ spectators).foreach(_.actorRef ! state)
     }
 
-    case Fighting(players, spectators, time) ⇒ ???
-    case GameOver(winners, spectators) ⇒ ???
+    case state@Fighting(players, spectators, time) ⇒ {
+      case RobotCommand(enginePower, steerPosition, fire) ⇒
+        state.copy(players = players.map {
+          case p@Player(robot, actorRef, _) if actorRef == sender() ⇒
+            p.copy(robot.copy(enginePower = enginePower, steerPos = steerPosition, firing = fire))
+          case p ⇒ p
+        })
+    }
+    case state@GameOver(winners, spectators) ⇒ {
+      case GameTick ⇒ spectators.foreach(_.actorRef ! state)
+    }
   }
 
   def createPlayer(ref: ActorRef, name: String) =
