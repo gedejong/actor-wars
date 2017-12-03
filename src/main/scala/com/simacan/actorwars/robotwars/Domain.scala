@@ -3,6 +3,7 @@ package com.simacan.actorwars.robotwars
 import java.awt.Color
 
 import akka.actor.ActorRef
+import org.jbox2d.dynamics.Body
 
 import scala.concurrent.duration.FiniteDuration
 
